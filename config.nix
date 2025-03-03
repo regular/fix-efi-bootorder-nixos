@@ -7,7 +7,7 @@ self: { pkgs, config, ... }: let
   else
     throw "Neither systemd-boot nor grub is enabled in the configuration.";
 in {
-  encironment.systemPackages = [
+  environment.systemPackages = [
     pkgs.writeScriptBin "fix-bootorder" ''
       #!${pkgs.stdenv.shell}
       set -euxo pipefail
