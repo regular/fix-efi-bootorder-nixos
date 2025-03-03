@@ -8,14 +8,17 @@
       system =  "x86_64-linux";
       pkgs = import nixpkgs { inherit system; };
     in
-  rec {
-    nixosModules.default = (import ./config.nix) self;
-    nixosModules.fix-efi-bootorder = nixosModules.default;
+  {
+    nixosModules = rec {
+      default = (import ./config.nix) self;
+      fix-efi-bootorder = default;
+    };
 
     packages.${system} = let
       pkg_deps = with pkgs; [ bash efibootmgr gawk gnugrep util-linux ];
       path = pkgs.lib.makeBinPath pkg_deps;
     in rec {
+      default = fix-efi-bootorder;
       fix-efi-bootorder = pkgs.buildNpmPackage rec {
         name = "fix-efi-bootorder";
         src = ./src;
