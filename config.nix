@@ -8,10 +8,10 @@ self: { pkgs, config, ... }: let
     throw "Neither systemd-boot nor grub is enabled in the configuration.";
 in {
   environment.systemPackages = [
-    pkgs.writeScriptBin "fix-bootorder" ''
+    (pkgs.writeScriptBin "fix-bootorder" ''
       #!${pkgs.stdenv.shell}
       set -euxo pipefail
       ${self.packages.${system}.default}/bin/fix-efi-bootorder --bootloader ${bootloader} --first PXE"
-    ''
+    '')
   ];
 }
