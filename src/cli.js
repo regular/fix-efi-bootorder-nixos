@@ -46,7 +46,7 @@ async function main() {
       } else if (cmd == 'dry-run') {
         await dryRun()
       } else {
-        throw new Error('missing sub-command: inspect or fix')
+        throw new Error('missing sub-command: inspect, dry-run or fix')
       }
     } catch(err) {
       console.error(err.message)
@@ -117,8 +117,15 @@ function ensureFirst(entries, substr) {
     return flags.includes('active')
      && content.includes(substr)
   })
-  if (!f) throw new Error(`No active entry with matching substr ("${substr}") found`)
-  if (f.id == entries[0].id) {
+  if (!f) {
+    const msg = `No active entry with matching substr ("${substr}") found`
+    if (config['first-is-optional']) {
+      console.error(msg)
+      console.error('continue anyway.')
+      return entries
+    }
+    throw new Error(msg)
+  } if (f.id == entries[0].id) {
     console.log(`Entry ${f.id} contains "${substr}" and is already the first entry`)
     return entries
   }

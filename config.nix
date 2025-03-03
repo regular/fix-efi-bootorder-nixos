@@ -11,7 +11,7 @@ in {
     (pkgs.writeScriptBin "fix-bootorder" ''
       #!${pkgs.stdenv.shell}
       set -euxo pipefail
-      ${self.packages.${system}.default}/bin/fix-efi-bootorder --bootloader ${bootloader} --first PXE
+      ${self.packages.${system}.default}/bin/fix-efi-bootorder fix --bootloader ${bootloader} --first PXE --first-is-optional
     '')
   ];
 }
