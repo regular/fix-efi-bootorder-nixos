@@ -1,4 +1,4 @@
-self: { pkgs, config }: let
+self: { pkgs, config, ... }: let
   system = "x86_64-linux";
   bootloader = if config.boot.loader.systemd-boot.enable then
     "systemd-boot"
