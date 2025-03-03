@@ -1,0 +1,20 @@
+{
+  "name": "fix-efi-bootorder",
+  "version": "1.0.0",
+  "main": "index.js",
+  "bin": {
+    "fix-efi-bootorder": "cli.js"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "Jan Bölsche <jan@lagomorph.de> (http://regular.codes/)",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "bl": "^6.0.20",
+    "debug": "^4.4.0",
+    "rc": "^1.2.8"
+  }
+}
