@@ -1,2 +1,2 @@
 set -euo pipefail
-lsblk -o PARTUUID,mountpoint | grep /boot | awk '{print $1}'
+lsblk -o PARTUUID,mountpoint | grep '\s/boot$' | awk '{print $1}'
