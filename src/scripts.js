@@ -6,12 +6,12 @@ const PKG_DEPS = 'awk grep lsblk efibootmgr'
 
 module.exports = function(env) {
   return {
-    getBootPartition,
+    getBootPartitions,
     efibootmgr
   }
 
-  function getBootPartition() {
-    return simpleScript('get-boot-partition.sh')
+  function getBootPartitions() {
+    return simpleScript('get-boot-partitions.sh')
   }
 
   function efibootmgr(args = null) {

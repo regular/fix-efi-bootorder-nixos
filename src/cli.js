@@ -24,7 +24,7 @@ try {
 }
 
 const {
-  getBootPartition,
+  getBootPartitions,
   efibootmgr
 } = Scripts({
   PATH: process.env.PATH,
@@ -76,40 +76,56 @@ function parse(s) {
   return ordered_entries
 }
 
-async function flag() {
-  const boot = await getBootPartition()
-  const uuid = boot.stdout
-  //console.log('Boot partition UUID is:', uuid)
+async function getBoots() {
+  let boots = await getBootPartitions()
+  boots = boots.stdout.split('\n').map(l=>{
+    const [uuid, mountpoint] = l.trim().split(/\s+/)
+    return {uuid, mountpoint}
+  })
+  boots = boots.sort( (a,b)=>{
+    if (a.mountpoint < b.mountpoint) return -1
+    if (a.mountpoint > b.mountpoint) return 1
+    return 0
+  })
+  return boots
+}
 
+async function flag(boots) {
   const entries = parse((await efibootmgr()).stdout)
   return entries.map( ({id, current, active, content})=>{
     const flags = []
     if (active) flags.push('active')
     if (current) flags.push('current')
-    if (content.includes(uuid)) flags.push('boot-uuid')
+    boots.forEach( ({uuid})=>{
+      if (content.includes(uuid)) flags.push('boot-uuid')
+    })
     if (content.includes(SYSTEMD_EFIFILENAME)) flags.push('systemd-boot')
     if (content.includes(GRUB_EFIFILENAME)) flags.push('grub')
     return {id, flags, content} 
   })
 }
 
-function ensureBootLoader(entries, bootloader) {
+function ensureBootLoader(entries, bootloader, boots) {
   if (bootloader !== 'systemd-boot' && bootloader !== 'grub') throw new Error('Invalid bootloader: ' + bootloader)
-
-  const f = entries.find( ({id, flags, content})=>{
-    return flags.includes('active')
-    && flags.includes('boot-uuid')
-    && flags.includes(bootloader)
+  
+  boots.reverse().forEach( ({uuid, mountpoint})=>{
+    const f = entries.find( ({id, flags, content})=>{
+      return flags.includes('active')
+      && flags.includes('boot-uuid')
+      && flags.includes(bootloader)
+      && content.includes(uuid)
+    })
+    if (!f) throw new Error(`No active entry with matching partition UUID (${uuid}) and bootloader (${bootloader}) found`)
+    if (f.id == entries[0].id) {
+      console.log(`Entry ${f.id} boots ${bootloader} from ${uuid} (${mountpoint}) and is already the first entry`)
+      return entries
+    }
+    console.log(`Making ${f.id} the first entry because it loads ${bootloader} from the correct ${uuid} (${mountpoint}).`)
+    const newEntries = entries.filter( e=>e!==f )
+    newEntries.unshift(f)
+    entries = newEntries
   })
-  if (!f) throw new Error(`No active entry with matching partition UUID and bootloader (${bootloader}) found`)
-  if (f.id == entries[0].id) {
-    console.log(`Entry ${f.id} boots ${bootloader} and is already the first entry`)
-    return entries
-  }
-  console.log(`Making ${f.id} the first entry because it loads ${bootloader} from the correct UUID.`)
-  const newEntries = entries.filter( e=>e!==f )
-  newEntries.unshift(f)
-  return newEntries
+  return entries
 }
 
 function ensureFirst(entries, substr) {
@@ -147,14 +163,20 @@ async function inspect() {
 }
 
 async function dryRun() {
+  const boots = await getBoots()
+  console.log('Boot partition UUIDs are:')
+  console.log(boots.map( ({mountpoint, uuid})=>{
+    return `${mountpoint} ${uuid}`
+  }).join('\n'))
+
   if (!config.bootloader) {
     throw new Error('Missing --bootloader')
   }
-  const entries = await flag()
+  const entries = await flag(boots)
   console.log('Before:')
   show(entries)
   console.log()
-  let newEntries = ensureBootLoader(entries, config.bootloader)
+  let newEntries = ensureBootLoader(entries, config.bootloader, boots)
   if (config.first) {
     const substrs = [config.first].flat()
     for(const substr of substrs) {
