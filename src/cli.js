@@ -60,7 +60,7 @@ function parse(s) {
   const mc = s.match(/BootCurrent:\s*([0-9]+)/m)
   if (!mc) throw new Error('No BootCurrent')
   const current = mc[1]
-  const m = s.match(/BootOrder:\s*([0-9\,]+)/m)
+  const m = s.match(/BootOrder:\s*([0-9A-F\,]+)/m)
   if (!m) throw new Error('BootOrder not found.')
   const [_, order] = m
   const entries = order.split(',')
